@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
 use std::io::Write;
+use std::env;
 use std::ops::Index;
 use std::path::is_separator;
 use calamine::Data::Int;
@@ -51,7 +52,7 @@ fn get_headers_from_sheet(sheet_range: &calamine::Range<Data>) -> HashMap<i64, S
 /// Hashmap 구조
 /// {sheet_name: [{ID: 0, KEY_A: 1, KEY_B: 2}, ...], sheet_name2: [...]}
 
-fn serialize_to_json(hash_map: &HashMap<String, Vec<HashMap<String, String>>>) -> Result<(), Box<dyn Error>> {
+fn serialize_to_json(hash_map: &HashMap<String, Vec<HashMap<String, String>>>, output_path: &String) -> Result<(), Box<dyn Error>> {
 
     let mut map = HashMap::new();
     map.insert("key1", "value1");
@@ -64,14 +65,23 @@ fn serialize_to_json(hash_map: &HashMap<String, Vec<HashMap<String, String>>>) -
     // JSON 문자열 출력
     // println!("{}", json);
 
-    let mut file = File::create("bd_static.json")?;
+    let mut file = File::create(output_path)?;
     file.write_all(json.as_bytes())?;
     
     Ok(())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let path = "bd_static.xlsx";
+
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() < 3 {
+        panic!("파라미터 갯수 부족");
+    }
+    let input_xlsx_path = &args[1];
+    let output_json_path = &args[2];
+
+    let path = input_xlsx_path;
     let mut workbook: Xlsx<_> = open_workbook(path)?;
 
     let mut static_data: HashMap<String, Vec<HashMap<String, String>>> = HashMap::new();
@@ -115,7 +125,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         
         static_data.insert(sheet_name.clone(), sheet_data);
-        serialize_to_json(&static_data);
+        serialize_to_json(&static_data, output_json_path);
     }
 
     
